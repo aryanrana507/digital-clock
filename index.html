@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #22d3ee;
+    --accent-soft: rgba(34, 211, 238, 0.16);
+    --accent-glow: rgba(34, 211, 238, 0.45);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+    background: #07090f;
+    color: #f1f5f9;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: background 0.4s;
+  }
+
+  /* soft moving colour blobs */
+  .orb { position: fixed; border-radius: 50%; filter: blur(90px); opacity: 0.55; pointer-events: none; }
+  .orb-1 { width: 420px; height: 420px; background: var(--accent); top: -120px; left: -100px; animation: drift 14s ease-in-out infinite alternate; }
+  .orb-2 { width: 360px; height: 360px; background: #7c3aed; bottom: -140px; right: -80px; animation: drift 18s ease-in-out infinite alternate-reverse; }
+  .orb-3 { width: 220px; height: 220px; background: #db2777; top: 55%; left: 62%; opacity: 0.35; animation: drift 11s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: translate(0, 0) scale(1); } to { transform: translate(40px, -30px) scale(1.12); } }
+
+  .card {
+    position: relative;
+    z-index: 1;
+    width: min(92vw, 760px);
+    padding: 48px 40px 40px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .date-line { font-size: clamp(15px, 2.6vw, 20px); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: #cbd5e1; }
+  .date-line b { color: var(--accent); font-weight: 600; }
+
+  .time-row { display: flex; align-items: baseline; justify-content: center; gap: 6px; margin-top: 18px; }
+  .time {
+    font-family: 'Orbitron', 'Segoe UI', monospace;
+    font-size: clamp(64px, 15vw, 128px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(180deg, #ffffff 20%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 42px var(--accent-glow);
+  }
+  .colon { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.15; } }
+  .ampm {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(18px, 3.4vw, 28px);
+    font-weight: 700;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    padding: 4px 10px;
+    align-self: center;
+    box-shadow: 0 0 18px var(--accent-glow);
+  }
+  .ampm.hidden { display: none; }
+
+  .seconds-bar { height: 6px; margin: 26px auto 8px; max-width: 420px; background: rgba(255, 255, 255, 0.1); border-radius: 99px; overflow: hidden; }
+  .seconds-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), #a78bfa); border-radius: 99px; transition: width 0.9s linear; box-shadow: 0 0 12px var(--accent-glow); }
+  .seconds-label { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: #94a3b8; }
+  .seconds-label span { color: var(--accent); font-weight: 600; }
+
+  .controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 30px; flex-wrap: wrap; }
+  .btn {
+    font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.04em;
+    color: #e2e8f0; background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 99px;
+    padding: 10px 18px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn:hover { background: var(--accent-soft); border-color: var(--accent); color: #fff; transform: translateY(-1px); }
+  .btn.active { background: var(--accent); border-color: var(--accent); color: #04121a; }
+  .themes { display: flex; gap: 10px; align-items: center; }
+  .dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
+  .dot:hover { transform: scale(1.2); }
+  .dot.active { border-color: #fff; box-shadow: 0 0 0 3px var(--accent-soft), 0 0 14px var(--accent-glow); }
+
+  .footer { margin-top: 26px; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: #64748b; }
+  .footer span { color: var(--accent); }
+
+  @media (max-width: 480px) {
+    .card { padding: 36px 20px 30px; border-radius: 22px; }
+    .time { font-size: clamp(56px, 17vw, 84px); }
+  }
+</style>
+</head>
+<body>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <main class="card">
+    <p class="date-line" id="dateLine">Loading…</p>
+
+    <div class="time-row">
+      <span class="time" id="time">00:00:00</span>
+      <span class="ampm" id="ampm">AM</span>
+    </div>
+
+    <div class="seconds-bar"><div class="seconds-fill" id="secondsFill"></div></div>
+    <p class="seconds-label"><span id="secondsNum">0</span> seconds into this minute</p>
+
+    <div class="controls">
+      <button class="btn" id="formatBtn" type="button">24-Hour</button>
+      <button class="btn" id="fullscreenBtn" type="button">⛶ Fullscreen</button>
+      <div class="themes" id="themes" title="Pick a colour theme"></div>
+    </div>
+
+    <p class="footer">Digital Clock &nbsp;•&nbsp; <span>aryanrana507</span></p>
+  </main>
+
+<script>
+  const THEMES = {
+    cyan:   { accent: '#22d3ee', soft: 'rgba(34,211,238,0.16)',  glow: 'rgba(34,211,238,0.45)' },
+    orange: { accent: '#fb923c', soft: 'rgba(251,146,60,0.16)',  glow: 'rgba(251,146,60,0.45)' },
+    pink:   { accent: '#f472b6', soft: 'rgba(244,114,182,0.16)',  glow: 'rgba(244,114,182,0.45)' },
+    green:  { accent: '#4ade80', soft: 'rgba(74,222,128,0.16)',   glow: 'rgba(74,222,128,0.45)' },
+    violet: { accent: '#a78bfa', soft: 'rgba(167,139,250,0.16)',  glow: 'rgba(167,139,250,0.45)' }
+  };
+
+  const timeEl = document.getElementById('time');
+  const ampmEl = document.getElementById('ampm');
+  const dateEl = document.getElementById('dateLine');
+  const fillEl = document.getElementById('secondsFill');
+  const secNumEl = document.getElementById('secondsNum');
+  const formatBtn = document.getElementById('formatBtn');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const themesEl = document.getElementById('themes');
+
+  let use24 = localStorage.getItem('clock-24h') === '1';
+  let theme = localStorage.getItem('clock-theme') || 'cyan';
+
+  function applyTheme(name) {
+    theme = name;
+    const t = THEMES[name];
+    const r = document.documentElement.style;
+    r.setProperty('--accent', t.accent);
+    r.setProperty('--accent-soft', t.soft);
+    r.setProperty('--accent-glow', t.glow);
+    localStorage.setItem('clock-theme', name);
+    document.querySelectorAll('.dot').forEach(d =>
+      d.classList.toggle('active', d.dataset.theme === name));
+  }
+
+  Object.keys(THEMES).forEach(name => {
+    const d = document.createElement('button');
+    d.type = 'button';
+    d.className = 'dot';
+    d.dataset.theme = name;
+    d.style.background = THEMES[name].accent;
+    d.title = name;
+    d.addEventListener('click', () => applyTheme(name));
+    themesEl.appendChild(d);
+  });
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function tick() {
+    const now = new Date();
+    let h = now.getHours();
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+
+    if (use24) {
+      ampmEl.classList.add('hidden');
+    } else {
+      ampmEl.classList.remove('hidden');
+      ampmEl.textContent = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+    }
+
+    timeEl.innerHTML =
+      pad(h) + '<span class="colon">:</span>' +
+      pad(m) + '<span class="colon">:</span>' + pad(s);
+
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    dateEl.innerHTML = '<b>' + days[now.getDay()] + '</b> &nbsp;•&nbsp; ' +
+      now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+
+    fillEl.style.width = (s / 59 * 100) + '%';
+    secNumEl.textContent = s;
+  }
+
+  function syncFormatBtn() {
+    formatBtn.textContent = use24 ? '12-Hour' : '24-Hour';
+    formatBtn.classList.toggle('active', use24);
+  }
+
+  formatBtn.addEventListener('click', () => {
+    use24 = !use24;
+    localStorage.setItem('clock-24h', use24 ? '1' : '0');
+    syncFormatBtn();
+    tick();
+  });
+
+  fullscreenBtn.addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'f' || e.key === 'F') fullscreenBtn.click();
+    if (e.key === 't' || e.key === 'T') formatBtn.click();
+  });
+
+  applyTheme(theme);
+  syncFormatBtn();
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
